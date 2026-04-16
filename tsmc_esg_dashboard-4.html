@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSMC ESG Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f4;--bg3:#efefed;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#88877f;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --info-bg:#e6f1fb;--info-text:#185fa5;
+  --success-bg:#eaf3de;--success-text:#3b6d11;
+  --warn-bg:#faeeda;--warn-text:#854f0b;
+  --danger-bg:#fcebeb;--danger-text:#a32d2d;
+  --r:8px;--rl:12px
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#242422;--bg3:#2c2c2a;
+  --text:#e8e6df;--text2:#a8a79f;--text3:#6e6d66;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+  --info-bg:#0c2c4a;--info-text:#85b7eb;
+  --success-bg:#1a3008;--success-text:#97c459;
+  --warn-bg:#3a2004;--warn-text:#fac775;
+  --danger-bg:#2e1010;--danger-text:#f09595
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+.dash{max-width:1020px;margin:0 auto;padding:2rem 1.5rem}
+.header{margin-bottom:1.75rem}
+.header h1{font-size:22px;font-weight:600}
+.header p{font-size:13px;color:var(--text2);margin-top:5px}
+.badge{display:inline-block;background:var(--info-bg);color:var(--info-text);font-size:11px;padding:3px 10px;border-radius:99px;margin-left:8px;font-weight:500;vertical-align:middle}
+.pillbar{display:flex;gap:8px;margin-bottom:1.75rem;flex-wrap:wrap}
+.pill{padding:5px 16px;border-radius:99px;font-size:12px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2);transition:all .15s;font-family:inherit}
+.pill:hover{background:var(--bg2)}
+.pill.active{background:var(--info-bg);color:var(--info-text);border-color:var(--info-text)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.75rem}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--bg2);border-radius:var(--r);padding:.9rem 1rem}
+.kpi .lbl{font-size:11px;color:var(--text2);margin-bottom:6px}
+.kpi .val{font-size:22px;font-weight:600}
+.kpi .sub{font-size:11px;margin-top:4px}
+.danger{color:var(--danger-text)}.success{color:var(--success-text)}.muted{color:var(--text3)}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:1.75rem}
+@media(max-width:640px){.charts{grid-template-columns:1fr}}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem}
+.card-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.card-sub{font-size:11px;color:var(--text3);margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+.full{grid-column:1/-1}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tl{border-radius:var(--r);padding:8px 10px}
+.tl .name{font-size:12px;font-weight:600}
+.tl .status{font-size:11px;margin-top:2px;opacity:.85}
+.green-bg{background:var(--success-bg);color:var(--success-text)}
+.amber-bg{background:var(--warn-bg);color:var(--warn-text)}
+.red-bg{background:var(--danger-bg);color:var(--danger-text)}
+.bar-wrap{margin-bottom:10px}
+.bar-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px}
+.bar-bg{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.corr-stat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
+.summary-box{background:var(--bg2);border-left:3px solid var(--info-text);border-radius:0 var(--r) var(--r) 0;padding:1rem 1.25rem;margin-top:1.5rem}
+.summary-box p{font-size:13px;color:var(--text2);font-style:italic;line-height:1.6}
+.summary-box .cite{font-size:11px;color:var(--text3);margin-top:6px}
+.data-note{font-size:11px;color:var(--text3);margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="header">
+    <h1>TSMC ESG Dashboard <span class="badge">Real Data 2020&#8211;2024</span></h1>
+    <p>Taiwan Semiconductor Manufacturing Company &middot; Source: 2022, 2023 &amp; 2024 Sustainability Reports &middot; SAM 503 ESG Analytics</p>
+  </div>
+
+  <div class="pillbar">
+    <button class="pill active" onclick="setTab('all',this)">All pillars</button>
+    <button class="pill" onclick="setTab('e',this)">Environmental</button>
+    <button class="pill" onclick="setTab('s',this)">Social</button>
+    <button class="pill" onclick="setTab('g',this)">Governance</button>
+    <button class="pill" onclick="setTab('corr',this)">GHG &amp; Revenue</button>
+  </div>
+
+  <div class="kpi-grid" id="main-kpis">
+    <div class="kpi"><div class="lbl">Scope 2 emissions (2024)</div><div class="val">10.96M</div><div class="sub danger">tCO&#8322;e &middot; +8% vs 2023</div></div>
+    <div class="kpi"><div class="lbl">Renewable energy share</div><div class="val">14.1%</div><div class="sub success">2024 &middot; Target 60% by 2030</div></div>
+    <div class="kpi"><div class="lbl">Women in management</div><div class="val">14.6%</div><div class="sub muted">2024 &middot; Board independence: 70%</div></div>
+    <div class="kpi"><div class="lbl">Carbon intensity</div><div class="val">237</div><div class="sub success">tCO&#8322;e/$M revenue &middot; &#8722;15% vs 2020</div></div>
+  </div>
+
+  <div class="corr-stat" id="corr-kpis" style="display:none">
+    <div class="kpi"><div class="lbl">Revenue CAGR (2020&#8594;2024)</div><div class="val">+18%</div><div class="sub success">$45.5B &#8594; $88B</div></div>
+    <div class="kpi"><div class="lbl">Total GHG CAGR (2020&#8594;2024)</div><div class="val">+13%</div><div class="sub danger">12.6M &#8594; 20.9M tCO&#8322;e</div></div>
+    <div class="kpi"><div class="lbl">Carbon intensity change</div><div class="val">&#8722;15%</div><div class="sub success">278 &#8594; 237 tCO&#8322;e/$M revenue</div></div>
+    <div class="kpi"><div class="lbl">Decoupling status</div><div class="val">Partial</div><div class="sub muted">Intensity &#8595; &middot; Absolutes &#8593;</div></div>
+  </div>
+
+  <div class="charts" id="main-charts">
+    <div class="card" id="c-e">
+      <div class="card-title">GHG emissions by scope (2020&#8211;2024)</div>
+      <div class="card-sub">Million tCO&#8322;e &middot; source: TSMC Sustainability Reports</div>
+      <div class="legend">
+        <span><i style="background:#3B6D11"></i>Scope 1</span>
+        <span><i style="background:#185FA5"></i>Scope 2</span>
+        <span><i style="background:#BA7517"></i>Scope 3 (partial)</span>
+      </div>
+      <div style="position:relative;height:210px"><canvas id="ghgChart" role="img" aria-label="Stacked bar chart of TSMC GHG emissions by scope 2020 to 2024">Scope 2 dominates; total grew from 12.6M to 20.9M tCO2e.</canvas></div>
+    </div>
+
+    <div class="card" id="c-e2">
+      <div class="card-title">Energy consumption &amp; renewable share (2019&#8211;2024)</div>
+      <div class="card-sub">GWh total (left) &middot; % renewable (right)</div>
+      <div class="legend">
+        <span><i style="background:#185FA5"></i>Total energy (GWh)</span>
+        <span><i style="background:#3B6D11"></i>Renewable %</span>
+      </div>
+      <div style="position:relative;height:210px"><canvas id="energyChart" role="img" aria-label="Dual-axis line chart of energy and renewables 2019 to 2024">Energy grew from 18.9k to 27.5k GWh; renewables from 0% to 14.1%.</canvas></div>
+    </div>
+
+    <div class="card" id="c-s">
+      <div class="card-title">Social metrics (2020&#8211;2024)</div>
+      <div class="card-sub">Employees (k) &middot; Training hrs &middot; Women in management %</div>
+      <div class="legend">
+        <span><i style="background:#533AB7"></i>Employees (k)</span>
+        <span><i style="background:#BA7517"></i>Training hrs</span>
+        <span><i style="background:#D85A30"></i>Women in mgmt %</span>
+      </div>
+      <div style="position:relative;height:210px"><canvas id="socialChart" role="img" aria-label="Multi-line social metrics chart 2020 to 2024">Employees 57k-85k; training 49-100.5 hrs; women in mgmt 13%-14.6%.</canvas></div>
+    </div>
+
+    <div class="card" id="c-g">
+      <div class="card-title">Data quality &amp; disclosure status</div>
+      <div class="card-sub">71% KPI coverage rate &middot; verified by DNV Business Assurance</div>
+      <div class="tgrid">
+        <div class="tl green-bg"><div class="name">Scope 1 &amp; 2</div><div class="status">Disclosed + verified</div></div>
+        <div class="tl green-bg"><div class="name">Board structure</div><div class="status">Fully disclosed</div></div>
+        <div class="tl green-bg"><div class="name">Customer trust</div><div class="status">96% (2024)</div></div>
+        <div class="tl green-bg"><div class="name">Water withdrawal</div><div class="status">Disclosed</div></div>
+        <div class="tl green-bg"><div class="name">TRIR safety</div><div class="status">0.156 (2023)</div></div>
+        <div class="tl green-bg"><div class="name">Supplier audits</div><div class="status">70 audited 2024</div></div>
+        <div class="tl amber-bg"><div class="name">Scope 3</div><div class="status">Partial categories</div></div>
+        <div class="tl amber-bg"><div class="name">Carbon intensity</div><div class="status">Not per-wafer unit</div></div>
+        <div class="tl amber-bg"><div class="name">Women workforce</div><div class="status">Mgmt only</div></div>
+        <div class="tl red-bg"><div class="name">Gender pay gap</div><div class="status">Not disclosed</div></div>
+        <div class="tl red-bg"><div class="name">CEO pay ratio</div><div class="status">Not disclosed</div></div>
+        <div class="tl red-bg"><div class="name">Employee turnover</div><div class="status">Not disclosed</div></div>
+      </div>
+    </div>
+
+    <div class="card full" id="c-target">
+      <div class="card-title">Target &amp; goal tracking</div>
+      <div class="card-sub">Progress toward SBTi-aligned and 2030/2040 targets &middot; source: official reports</div>
+      <div style="margin-top:8px">
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>Renewable electricity share (target 60% by 2030)</span><span>14.1% achieved (23.5% of target)</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:23.5%;background:#185FA5"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>Unit GHG reduction vs 2020 base (target &#8722;30% by 2030)</span><span>+19% — moving away from target</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:5%;background:#A32D2D"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>High-energy supplier ISO 14064 verification (target 100%)</span><span>90% achieved</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:90%;background:#BA7517"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>Supplier energy reduction cumulative (target 1,500 GWh)</span><span>1,026 GWh = 68%</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:68%;background:#533AB7"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>Waste recycling rate (target 100%)</span><span>97% achieved</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:97%;background:#3B6D11"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-lbl"><span>Women in management (target 18% by 2030)</span><span>14.6% achieved (81%)</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:81%;background:#D85A30"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="corr-charts" style="display:none">
+    <div class="charts">
+      <div class="card" id="c-corr1">
+        <div class="card-title">Revenue vs total GHG &#8212; indexed (2020 = 100)</div>
+        <div class="card-sub">Revenue grew ~2&#215; faster than emissions &#8212; relative decoupling, not absolute</div>
+        <div class="legend">
+          <span><i style="background:#185FA5"></i>Revenue</span>
+          <span><i style="background:#BA7517"></i>Total GHG</span>
+        </div>
+        <div style="position:relative;height:210px"><canvas id="indexChart" role="img" aria-label="Indexed comparison of revenue vs total GHG 2020-2024">Revenue index ~193 vs GHG index ~165 by 2024.</canvas></div>
+      </div>
+      <div class="card" id="c-corr2">
+        <div class="card-title">Carbon intensity &#8212; tCO&#8322;e per $1M revenue (2020&#8211;2024)</div>
+        <div class="card-sub">Declining trend &middot; efficiency improving per dollar earned</div>
+        <div style="position:relative;height:210px"><canvas id="intensityChart" role="img" aria-label="Bar chart of carbon intensity per million USD revenue 2020 to 2024">Intensity fell from 278 to 237 tCO2e per $1M revenue.</canvas></div>
+      </div>
+      <div class="card full" id="c-corr3">
+        <div class="card-title">Scope breakdown vs. revenue &#8212; absolute (2020&#8211;2024)</div>
+        <div class="card-sub">Stacked tCO&#8322;e (M) left axis &middot; revenue $B right axis &middot; Scope 2 electricity dominates</div>
+        <div class="legend">
+          <span><i style="background:#3B6D11"></i>Scope 1</span>
+          <span><i style="background:#185FA5"></i>Scope 2</span>
+          <span><i style="background:#BA7517"></i>Scope 3 (partial)</span>
+          <span><i style="background:#533AB7"></i>Revenue $B</span>
+        </div>
+        <div style="position:relative;height:240px"><canvas id="scopeRevChart" role="img" aria-label="Stacked bar with revenue line overlay 2020 to 2024">Revenue grew strongly while emissions rose; Scope 2 dominates.</canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-box">
+    <p>&ldquo;TSMC is a governance-strong, innovation-led semiconductor leader whose biggest ESG challenge is cutting electricity- and supply-chain-driven emissions fast enough to match the scale of its global growth.&rdquo;</p>
+    <div class="cite">SAM 503 ESG Analytics &middot; Lab 4 Session 8 &middot; Illinois Tech, Stuart Business School &middot; Data: TSMC 2022, 2023 &amp; 2024 Sustainability Reports (verified by DNV)</div>
+  </div>
+  <div class="data-note">All figures sourced directly from TSMC official Sustainability Reports (2022–2024). Revenue in USD millions from annual disclosures. Scope 3 covers purchased goods/services and energy-related upstream activities per TSMC methodology; full category-level breakdown not yet publicly disclosed. Carbon intensity = total GHG / revenue in $M.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const dark=matchMedia('(prefers-color-scheme:dark)').matches;
+const grid=dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.05)';
+const tick=dark?'#888':'#999';
+const Y=['2020','2021','2022','2023','2024'];
+const s1=[2.00,2.15,2.02,1.60,1.83];
+const s2=[7.45,8.15,9.54,10.19,10.96];
+const s3=[3.19,4.30,7.32,7.38,8.11];
+const ghg=Y.map((_,i)=>+(s1[i]+s2[i]+s3[i]).toFixed(2));
+const rev=[45.5,56.8,75.9,69.3,88.0];
+const inten=Y.map((_,i)=>Math.round((ghg[i]*1e6)/rev[i]));
+const rIdx=rev.map(v=>Math.round(v/rev[0]*100));
+const gIdx=ghg.map(v=>Math.round(v/ghg[0]*100));
+
+new Chart(document.getElementById('ghgChart'),{type:'bar',data:{labels:Y,datasets:[
+  {label:'Scope 1',data:s1,backgroundColor:'#3B6D11',borderRadius:2,stack:'g'},
+  {label:'Scope 2',data:s2,backgroundColor:'#185FA5',borderRadius:2,stack:'g'},
+  {label:'Scope 3',data:s3,backgroundColor:'#BA7517',borderRadius:2,stack:'g'}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M tCO\u2082e'}}},
+  scales:{x:{stacked:true,ticks:{color:tick,font:{size:11}},grid:{color:grid}},
+    y:{stacked:true,ticks:{color:tick,font:{size:11},callback:v=>v+'M'},grid:{color:grid}}}}});
+
+new Chart(document.getElementById('energyChart'),{type:'line',data:{labels:['2019','2020','2021','2022','2023','2024'],datasets:[
+  {label:'Total energy',data:[18890,19830,22000,22400,24700,27456],borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',fill:true,tension:0.3,pointRadius:3,yAxisID:'y'},
+  {label:'Renewable %',data:[0,3,5,10.4,11.2,14.1],borderColor:'#3B6D11',borderDash:[5,3],tension:0.3,pointRadius:3,yAxisID:'y2'}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{x:{ticks:{color:tick,font:{size:10},maxRotation:45,autoSkip:false},grid:{color:grid}},
+    y:{position:'left',ticks:{color:tick,font:{size:10},callback:v=>(v/1000).toFixed(0)+'k'},grid:{color:grid},title:{display:true,text:'GWh',color:tick,font:{size:10}}},
+    y2:{position:'right',ticks:{color:tick,font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'Renewable %',color:tick,font:{size:10}}}}}});
+
+new Chart(document.getElementById('socialChart'),{type:'line',data:{labels:Y,datasets:[
+  {label:'Employees (k)',data:[56.8,65.1,73.7,76.5,84.5],borderColor:'#533AB7',tension:0.3,pointRadius:3,yAxisID:'y'},
+  {label:'Training hrs',data:[49.1,63.1,69.5,85.4,100.5],borderColor:'#BA7517',borderDash:[5,3],tension:0.3,pointRadius:3,yAxisID:'y2'},
+  {label:'Women mgmt %',data:[13.0,13.3,13.3,14.1,14.6],borderColor:'#D85A30',borderDash:[3,3],tension:0.3,pointRadius:3,yAxisID:'y3'}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{x:{ticks:{color:tick,font:{size:11}},grid:{color:grid}},
+    y:{position:'left',ticks:{color:tick,font:{size:10},callback:v=>v+'k'},grid:{color:grid}},
+    y2:{position:'right',ticks:{color:tick,font:{size:10},callback:v=>v+'h'},grid:{drawOnChartArea:false}},
+    y3:{display:false,min:10,max:20}}}});
+
+function buildCorr(){
+  new Chart(document.getElementById('indexChart'),{type:'line',data:{labels:Y,datasets:[
+    {label:'Revenue',data:rIdx,borderColor:'#185FA5',tension:0.3,pointRadius:4,pointStyle:'circle',borderWidth:2},
+    {label:'Total GHG',data:gIdx,borderColor:'#BA7517',borderDash:[5,3],tension:0.3,pointRadius:4,pointStyle:'rectRot',borderWidth:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tick,font:{size:11}},grid:{color:grid}},
+      y:{ticks:{color:tick,font:{size:11}},grid:{color:grid},title:{display:true,text:'Index (2020=100)',color:tick,font:{size:10}}}}}});
+
+  new Chart(document.getElementById('intensityChart'),{type:'bar',data:{labels:Y,datasets:[
+    {label:'Intensity',data:inten,backgroundColor:Y.map((_,i)=>i===4?'#185FA5':'#85B7EB'),borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' tCO\u2082e / $1M'}}},
+    scales:{x:{ticks:{color:tick,font:{size:11}},grid:{color:grid}},
+      y:{ticks:{color:tick,font:{size:11}},grid:{color:grid},title:{display:true,text:'tCO\u2082e per $1M revenue',color:tick,font:{size:10}}}}}});
+
+  new Chart(document.getElementById('scopeRevChart'),{type:'bar',data:{labels:Y,datasets:[
+    {label:'Scope 1',data:s1,backgroundColor:'#3B6D11',borderRadius:2,stack:'ghg'},
+    {label:'Scope 2',data:s2,backgroundColor:'#185FA5',borderRadius:2,stack:'ghg'},
+    {label:'Scope 3',data:s3,backgroundColor:'#BA7517',borderRadius:2,stack:'ghg'},
+    {label:'Revenue $B',data:rev,type:'line',borderColor:'#533AB7',tension:0.3,pointRadius:4,pointStyle:'rectRot',borderWidth:2,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tick,font:{size:11}},grid:{color:grid}},
+      y:{stacked:true,ticks:{color:tick,font:{size:11},callback:v=>v+'M'},grid:{color:grid},title:{display:true,text:'tCO\u2082e (M)',color:tick,font:{size:10}}},
+      y2:{position:'right',ticks:{color:tick,font:{size:11},callback:v=>'$'+v+'B'},grid:{drawOnChartArea:false},title:{display:true,text:'Revenue',color:tick,font:{size:10}}}}}});
+}
+
+const eIds=['c-e','c-e2','c-target'],sIds=['c-s'],gIds=['c-g'],allIds=['c-e','c-e2','c-s','c-g','c-target'];
+function setTab(tab,btn){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const isCorr=tab==='corr';
+  document.getElementById('main-kpis').style.display=isCorr?'none':'';
+  document.getElementById('corr-kpis').style.display=isCorr?'':'none';
+  document.getElementById('main-charts').style.display=isCorr?'none':'';
+  document.getElementById('corr-charts').style.display=isCorr?'':'none';
+  if(isCorr&&!window._cb){buildCorr();window._cb=true;}
+  if(!isCorr&&tab!=='all'){
+    const show=tab==='e'?eIds:tab==='s'?sIds:gIds;
+    allIds.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=show.includes(id)?'':'none';});
+  } else if(!isCorr){
+    allIds.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
+  }
+}
+</script>
+</body>
+</html>
